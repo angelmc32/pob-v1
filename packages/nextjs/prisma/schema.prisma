@@ -1,0 +1,97 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  user_address        String                @id
+  collections         PobCollection[]
+  pobTokens           PobToken[]
+  transactions        TransactionReceipt[]
+}
+
+model PobToken {
+  id                  Int                   @id
+  owner_address       String
+  owner               User                  @relation(fields: [owner_address], references: [user_address])
+  name                String
+  description         String
+  image_cid           String?
+  image_uri           String?
+  token_cid           String?
+  token_uri           String?
+  collection_id       Int?
+  collection          PobCollection?        @relation(fields: [collection_id], references: [id])
+  minted_by           String
+  minted_at           DateTime              @default(now())
+  created_at          DateTime              @default(now())
+  chain               Chain                 @relation(fields: [chain_id], references: [id])
+  chain_id            Int                   @default(1)
+}
+
+model PobCollection {
+  id                  Int                   @id
+  contract_address    String                @default("0x0")
+  owner_address       String
+  owner               User                  @relation(fields: [owner_address], references: [user_address])
+  name                String
+  description         String
+  image_cid           String?
+  image_uri           String?
+  token_cid           String?
+  token_uri           String?
+  max_supply          Int
+  merkle_root         String?
+  has_claimed         Boolean
+  contract_type       CONTRACT_TYPE         @default(A_721)
+  status              STATUS                @default(DRAFT_EMPTY_0)
+  created_at          DateTime              @default(now())
+  deployed_at         DateTime?
+  pobs                PobToken[]
+  chain               Chain                 @relation(fields: [chain_id], references: [id])
+  chain_id            Int                   @default(1)
+  transactions        TransactionReceipt[]
+}
+
+model Chain {
+  id                  Int                   @id
+  category            CHAIN_CATEGORY
+  name                String                @unique
+  native_token        String                @unique
+  collections         PobCollection[]
+  pobs                PobToken[]
+}
+
+model TransactionReceipt {
+  transactionHash     String          @id
+  user_address        String
+  user                User            @relation(fields: [user_address], references: [user_address])
+  pob_id              Int?
+  pob_collection      PobCollection?  @relation(fields: [pob_id], references: [id])
+}
+
+enum STATUS {
+  DEPLOYED_5
+  DRAFT_METADATA_IPFS_4
+  DRAFT_IMG_IPFS_3
+  DRAFT_METADATA_DB_2
+  DRAFT_IMG_DB_1
+  DRAFT_EMPTY_0
+}
+
+enum CONTRACT_TYPE {
+  A_1155
+  A_721
+}
+
+enum CHAIN_CATEGORY {
+  MAINNET
+  TESTNET
+}
